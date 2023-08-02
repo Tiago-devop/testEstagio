@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Teste prático</title>
+    <style>
+        section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        div {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+
+        }
+        span {
+            margin: 5px;
+            padding: 5px;
+            border: solid 1px black;
+            width: 160px;
+            text-align: center;
+        }
+        h2 {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <section>
+        <h1>Quantidade de tags existentes de site fornecido</h1>
+     <form>
+        <label for="webpage">Pagina desejada aqui </label><input type="url" name="webpage" id="webpage" onblur="validateUrlInput()" required>
+        <button type="submit">Pegar tags</button>
+     </form>
+     <h2>Resultado</h2>
+     <div></div>
+    </section>
+</body>
+<script>
+    const getAllNodes = function(nodeList) {
+        if(!nodeList) return null
+        const nodes = {}
+        nodeList.forEach(({ localName: tag } = nodeObj) => {
+            if(nodes[tag]) {
+                nodes[tag] = nodes[tag] + 1
+            } else {
+                nodes[tag] = 1
+            }
+        })
+        console.log('Nodes:', nodes);
+        return nodes
+    }
+    async function getWebPageContent(url) {
+        try {
+            const proxyUrl = "https://cors-anywhere.herokuapp.com/"
+            const res = await fetch(proxyUrl + url)
+            if(!res.ok) throw new Error('não foi possivel verificar')
+
+            const htmlContent = await res.text()
+            const parser = new DOMParser()
+            const doc = parser.parseFromString(htmlContent, "text/html")
+            return getAllNodes(doc.querySelectorAll("*"))
+        } catch(err) {
+            console.error('Erro ao pegar as informações do site')
+            return null
+        }
+    }
+    async function logWebPageContent(url) {
+        console.log('logWebPageContent called with URL:', url);
+        const data = await getWebPageContent(url)
+        data && console.log('Data:', data)
+        let divElement = document.querySelector('div')
+        if(data) {
+            while(divElement.firstChild) {
+                divElement.removeChild(divElement.firstChild)
+            }
+            Object.entries(data).forEach(([tag, count]) => {
+                const span = document.createElement('span')
+                span.textContent = `Tag: ${tag} QTD: ${count}`
+                divElement.appendChild(span)
+            })
+        }
+        console.log('Fetched data:', data);
+        return data
+    }
+    function handleSubmit(event) {
+        console.log('handleSubmit called');
+        event.preventDefault()
+        let inputElement = document.getElementById('webpage')
+        let { value: PageURL } = inputElement
+        console.log('value of input', PageURL)
+        logWebPageContent(PageURL)
+    }
+    const urlRegExp = /^(http|https):\/\/[^ "]+$/
+    function validateUrlInput() {
+        const inputElement = document.getElementById('webpage')
+        const isValidURL = urlRegExp.test(inputElement.value)
+
+        if(!isValidURL) inputElement.setCustomValidity('Por favor coloque um URL valido')
+        else inputElement.setCustomValidity('')
+    }
+
+    let formElement = document.querySelector('form')
+    formElement.addEventListener('submit', handleSubmit)
+
+
+</script>
+</html>
